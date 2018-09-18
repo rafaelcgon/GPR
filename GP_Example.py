@@ -45,14 +45,13 @@ def main(nsamples = 15,ratio=0.8):
 	x,y,phi,u,v = generate_spiral(ratio=ratio)
 
 	X,Y = np.meshgrid(x,y)
-        X = X.reshape([X.size,1])
-        Y = Y.reshape([Y.size,1])
-        GridPoints = np.concatenate([Y,X],axis=1)
-
+	X = X.reshape([X.size,1])
+	Y = Y.reshape([Y.size,1])
+	GridPoints = np.concatenate([Y,X],axis=1)
 	U = u.reshape([u.size,1])
 	V = v.reshape([v.size,1])
 
-        # get observations 
+	# get observations 
 	ii = np.random.randint(0,u.size,nsamples)
 	obs = np.concatenate([V[ii,0][:,None],U[ii,0][:,None]],axis=1)
 	Xo = np.concatenate([Y[ii,0][:,None],X[ii,0][:,None]],axis=1)
@@ -60,15 +59,15 @@ def main(nsamples = 15,ratio=0.8):
 
 # Scalar analysis: treating the velocity components u and v as independent scalars
 
-        # get covariance function for GPR
-        # here I chose the squared exponential (RBF), but there are other options 
+	# get covariance function for GPR
+	# here I chose the squared exponential (RBF), but there are other options 
 	k = GPy.kern.RBF(input_dim = 2,ARD=True) 
 
 	# model for velocity component u: 
 	model_u = GPy.models.GPRegression(Xo,obs[:,1][:,None],k.copy())
-        # optimize hyper-parameters
+	# optimize hyper-parameters
 	model_u.optimize_restarts(num_restarts=10)
-        # regression
+	# regression
 	Up,Kpu = model_u.predict(GridPoints)
 #       Up is the posterior mean and Kpu is the posterior covariance
 	up = np.reshape(Up,[y.size,x.size])
@@ -84,16 +83,16 @@ def main(nsamples = 15,ratio=0.8):
 	knd = myKernel2D.divFreeK(input_dim=2, active_dims=[0,1]) # impose non-divergence constraint
 	knr = myKernel2D.curlFreeK(input_dim=2, active_dims=[0,1])# impose non-rotation constraint
 
-        obs2 =  np.concatenate([V[ii,0][:,None],U[ii,0][:,None]],axis=0) # observations of u and v must be in the same "observation vector".
-     
-        model = GPy.models.GPRegression(Xo,obs2,knd.copy()+knr.copy())
-        # just one model for both components. The covariance function is composed by a 
-        # non-divergent part (knd) and a non-rotating part (knr).          
+	obs2 =  np.concatenate([V[ii,0][:,None],U[ii,0][:,None]],axis=0) # observations of u and v must be in the same "observation vector".
+	model = GPy.models.GPRegression(Xo,obs2,knd.copy()+knr.copy())
+	# just one model for both components. The covariance function is composed by a 
+	# non-divergent part (knd) and a non-rotating part (knr).          
 	model.optimize_restarts(num_restarts=10)
 	VU,Kvu = model.predict(GridPoints)
 	vp2 = np.reshape(VU[:VU.size/2,0],[y.size,x.size])
 	up2 = np.reshape(VU[VU.size/2:,0],[y.size,x.size])
 
+	# Plot results
 	ds = 2
 	figW = 12.
 	figH = 4.
